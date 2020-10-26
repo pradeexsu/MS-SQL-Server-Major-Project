@@ -1,3 +1,7 @@
+create database ShopDB;
+use ShopDB;
+-- use master;
+-- drop database ShopDB;
 
 create table Employee(
     e_id int primary key,
@@ -65,14 +69,15 @@ go
 -- truncate table OrderDetails
 -- truncate table MonthlySales
 -- truncate table MonthlySalesByAllCustomer
-
 -- ON DELETE CASCADE
+
 -- truncate table Employee
 -- delete from Employee 
 -- select * from Employee
 -- truncate table Customer
 -- delete from Customer
 
+-- select * from Employee;
 
 create or alter function dbo.getTotalSale()
     returns decimal(10)
@@ -478,3 +483,199 @@ go
 
 exec TotalSaleToCustomer 201
 
+
+-- nt highest salary
+-- 1
+select e_salary from Employee order by e_salary;
+go
+
+create or alter proc nthHighestSalaryOfEmployee
+    @n as int
+    as
+    begin
+        print(cast(@n AS VARCHAR(10)))
+        select concat(@n,'th hightest Salary is -->') ' ',min(e_salary) ' '
+        from Employee where e_salary in
+        (select top(@n) e_salary from
+        Employee order by e_salary desc)
+    end
+go
+
+exec nthHighestSalaryOfEmployee 1
+go
+exec nthHighestSalaryOfEmployee 2
+go
+exec nthHighestSalaryOfEmployee 3
+go
+exec nthHighestSalaryOfEmployee 4
+go
+
+-- 2
+
+
+WITH RESULT AS
+(
+    SELECT e_SALARY,
+           DENSE_RANK() OVER (ORDER BY e_SALARY DESC) AS DENSERANK
+    FROM EMPLOYEE
+)
+SELECT TOP 1 e_SALARY
+FROM RESULT
+WHERE DENSERANK = 3
+go
+
+-- trigger
+-- dml trigger
+-- inserted  & deleted table is special table that only can be accessed inside a trigger defination
+
+create or alter trigger insertTringgerOnOrderder
+on OrderDetails
+for insert
+as
+begin
+   print('thank you for having us, come again') 
+   select * from inserted;
+end
+go
+
+create or alter trigger insertTringgerOnEmployee
+on Employee
+for insert
+as
+begin
+   print('Welcome to Our Shop family') 
+   select * from inserted;
+end
+go
+
+create or alter trigger insertTringgerOnCustomer
+on Customer
+for insert
+as
+begin
+   print('Welcome to Our Shop, your satisfaction is our goal') 
+   select * from inserted;
+end
+go
+
+
+create or alter trigger deleteTringgerOnOrderder
+on OrderDetails
+for delete
+as
+begin
+   print('nil') 
+   select * from deleted;
+end
+go
+
+create or alter trigger deleteTringgerOnEmployee
+on Employee
+for delete
+as
+begin
+   print('thanks for be with our shop') 
+   select * from deleted;
+end
+go
+
+create or alter trigger deleteTringgerOnCustomer
+on Customer
+for delete
+as
+begin
+   print('we hope you are happy, to be with us') 
+   select * from deleted;
+end
+go
+
+
+
+create or alter trigger updateTringgerOnOrderder
+on OrderDetails
+for update
+as
+begin
+   print('order updated') 
+   select * from inserted;
+   select * from deleted;
+end
+go
+
+create or alter trigger updateTringgerOnEmployee
+on Employee
+for update
+as
+begin
+   print('Emplyee Details updated') 
+   select * from inserted;
+   select * from deleted;
+end
+go
+
+create or alter trigger updateTringgerOnCustomer
+on Customer
+for update
+as
+begin
+   print('Customer Details updated') 
+   select * from inserted;
+   select * from deleted;
+end
+go
+
+
+
+-- cte
+-- with cte_name(column1, column2, ..)
+-- as
+-- (CTE_query)
+
+-- comman table expression
+---
+with employeeCount
+as
+(
+    select e_role, count(*) as total_employees
+    from Employee group by e_role
+)
+---
+select e_role, total_employees from employeeCount
+---
+
+-- pivot operator
+
+-- select SalesCountry,SalesAgent,Sum(SalesAmount) as Total
+-- from tblProductSales
+-- group by SalesCountry,SalesAgent
+-- order by SalesCountry,SalesAgent
+
+-- select SalesAgent, India, US, UK
+-- from tblProductSales
+-- pivot(
+--     sum(SalesAmount)
+--     for SalesCountry
+--     in ([India],[US],[UK])
+-- )
+-- as PivotTable
+
+-- create  index index_name on table onwhich (column with prefercnce)
+-- select * from sys.indexes where name like 'idx%'
+use ShopDB
+
+select * from Employee
+create index idxEmployee on Employee (e_id asc);
+go
+sp_Helpindex Employee
+go
+
+-- create clustered index idxEmployeeSal on Employee (e_salary asc,e_id desc );
+-- go
+sp_Helpindex Employee
+
+EXEC sp_rename 
+        N'Employee.PK__Employee__3E2ED64A3668FA9D',
+        N'Employee.idxEmployeeSalary' ,
+        N'INDEX';
+go
+-- drop index Employee.idxEmployeeSalary
